@@ -1,0 +1,109 @@
+$files = Get-ChildItem -Filter "*_*.html"
+if ($files.Count -eq 0) {
+    Write-Host "No HTML file found."
+    exit
+}
+$path = $files[0].FullName
+$lines = [System.IO.File]::ReadAllLines($path, [System.Text.Encoding]::UTF8)
+[string[]]$newLines = @()
+
+for ($i = 0; $i -lt $lines.Length; $i++) {
+    $lineNum = $i + 1
+    
+    if ($lineNum -ge 5886 -and $lineNum -le 6096) {
+        if ($lineNum -eq 5886) {
+            $newLines += '                  "number":  24,'
+            $newLines += '                  "name":  "최은성",'
+            $newLines += '                  "class":  8,'
+            $newLines += '                  "grade":  3'
+            $newLines += '              },'
+            $newLines += '              {'
+            $newLines += '                  "number":  25,'
+            $newLines += '                  "name":  "한태양",'
+            $newLines += '                  "class":  8,'
+            $newLines += '                  "grade":  3'
+            $newLines += '              },'
+            $newLines += '              {'
+            $newLines += '                  "number":  1,'
+            $newLines += '                  "name":  "김나경",'
+            $newLines += '                  "class":  9,'
+            $newLines += '                  "grade":  3'
+            $newLines += '              },'
+            $newLines += '              {'
+            $newLines += '                  "number":  2,'
+            $newLines += '                  "name":  "김도현",'
+            $newLines += '                  "class":  9,'
+            $newLines += '                  "grade":  3'
+            $newLines += '              },'
+            $newLines += '              {'
+            $newLines += '                  "number":  3,'
+            $newLines += '                  "name":  "김지민",'
+            $newLines += '                  "class":  9,'
+            $newLines += '                  "grade":  3'
+            $newLines += '              },'
+            $newLines += '              {'
+            $newLines += '                  "number":  4,'
+            $newLines += '                  "name":  "김지환",'
+            $newLines += '                  "class":  9,'
+            $newLines += '                  "grade":  3'
+            $newLines += '              },'
+            $newLines += '              {'
+            $newLines += '                  "number":  5,'
+            $newLines += '                  "name":  "박시우",'
+            $newLines += '                  "class":  9,'
+            $newLines += '                  "grade":  3'
+            $newLines += '              },'
+            $newLines += '              {'
+            $newLines += '                  "number":  6,'
+            $newLines += '                  "name":  "박시은",'
+            $newLines += '                  "class":  9,'
+            $newLines += '                  "grade":  3'
+            $newLines += '              },'
+            $newLines += '              {'
+            $newLines += '                  "number":  7,'
+            $newLines += '                  "name":  "배소연",'
+            $newLines += '                  "class":  9,'
+            $newLines += '                  "grade":  3'
+            $newLines += '              },'
+            $newLines += '              {'
+            $newLines += '                  "number":  8,'
+            $newLines += '                  "name":  "배영현",'
+            $newLines += '                  "class":  9,'
+            $newLines += '                  "grade":  3'
+            $newLines += '              },'
+            $newLines += '              {'
+            $newLines += '                  "number":  9,'
+            $newLines += '                  "name":  "백민유",'
+            $newLines += '                  "class":  9,'
+            $newLines += '                  "grade":  3'
+            $newLines += '              },'
+            $newLines += '              {'
+            $newLines += '                  "number":  10,'
+            $newLines += '                  "name":  "서희원",'
+            $newLines += '                  "class":  9,'
+            $newLines += '                  "grade":  3'
+            $newLines += '              },'
+            $newLines += '              {'
+            $newLines += '                  "number":  11,'
+            $newLines += '                  "name":  "안연후",'
+            $newLines += '                  "class":  9,'
+            $newLines += '                  "grade":  3'
+            $newLines += '              },'
+            $newLines += '              {'
+            $newLines += '                  "number":  12,'
+            $newLines += '                  "name":  "유제혁",'
+            $newLines += '                  "class":  9,'
+            $newLines += '                  "grade":  3'
+            $newLines += '              },'
+            $newLines += '              {'
+            $newLines += '                  "number":  13,'
+            $newLines += '                  "name":  "유주성",'
+        }
+        continue
+    }
+
+    $newLines += $lines[$i]
+}
+
+[System.IO.File]::WriteAllLines($path, $newLines, [System.Text.Encoding]::UTF8)
+Write-Host "Replaced lines 5886 to 6096 with correct JSON! Path: $path"
