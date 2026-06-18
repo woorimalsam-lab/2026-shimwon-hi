@@ -1052,6 +1052,7 @@
   <script src="template_jinro.js"></script>
   <script src="template_subject.js"></script>
   <script src="template_comprehensive.js"></script>
+  <script src="subject_rosters.js"></script>
 </head>
 <body>
 
@@ -1066,7 +1067,8 @@
     
     <ul class="nav-menu">
       <li class="nav-item active" data-tab="inspector">📝 생기부 점검</li>
-      <li class="nav-item" data-tab="excel-inspector">📊 엑셀 일괄 점검</li>
+      <li class="nav-item" data-tab="excel-inspector">📊 엑셀 일괄 점검(담임교사)</li>
+      <li class="nav-item" data-tab="excel-inspector-subject">📊 엑셀 일괄 점검(교과교사)</li>
       <li class="nav-item" data-tab="duplicator">👥 복붙 유사도 검사</li>
       <li class="nav-item" data-tab="dictionary">📖 대체표현 사전</li>
       <li class="nav-item" data-tab="qa">❓ 기재요령 Q&A</li>
@@ -1310,6 +1312,90 @@
                   <tr>
                     <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px 0;">
                       생기부 엑셀 파일을 업로드하면 점검이 시작됩니다.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2-1: 엑셀 일괄 점검 (교과교사) -->
+    <div id="tab-excel-inspector-subject" class="tab-content">
+      <div class="dashboard-grid">
+        <!-- Control Card -->
+        <div class="card">
+          <h3 class="card-title">⚙️ 업로드 및 양식 (교과교사용)</h3>
+          
+          <label style="font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 6px; font-weight: 700;">1. 학년 및 과목 선택</label>
+          <div style="display: flex; gap: 8px; margin-bottom: 24px;">
+            <select id="excel-subject-grade-select" class="info-input" style="flex: 1; height: 38px; background-color: #0b0f19;">
+              <option value="">학년 선택</option>
+              <option value="1">1학년</option>
+              <option value="2">2학년</option>
+              <option value="3">3학년</option>
+            </select>
+            <select id="excel-subject-select" class="info-input" style="flex: 2; height: 38px; background-color: #0b0f19;">
+              <option value="">학년을 먼저 선택하세요</option>
+            </select>
+          </div>
+
+          <button id="excel-subject-template-btn" class="lib-btn" style="width: 100%; margin-bottom: 24px; padding: 10px;">📋 템플릿 파일 다운로드</button>
+
+          <label style="font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 6px; font-weight: 700;">2. 엑셀 파일 올리기</label>
+          <div id="excel-subject-dropzone" class="dropzone">
+            <span style="font-size: 32px;">📤</span>
+            <div class="dropzone-text">여기에 파일을 끌어다 놓거나 클릭하여 선택하세요</div>
+            <input type="file" id="excel-subject-file-input" accept=".xlsx, .xls" style="display: none;">
+          </div>
+
+          <button id="excel-subject-export-btn" class="lib-btn" style="width: 100%; background-color: var(--success);" disabled>📥 점검 리포트 다운로드</button>
+        </div>
+
+        <!-- Result Card -->
+        <div class="card" style="display: flex; flex-direction: column; gap: 20px;">
+          <h3 class="card-title">📊 기재 일괄 분석 요약 (교과교사)</h3>
+
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+            <div class="report-stat-box">
+              <div class="report-stat-title">총 인원</div>
+              <div id="excel-subject-stat-total" class="report-stat-value">0 명</div>
+            </div>
+            <div class="report-stat-box">
+              <div class="report-stat-title">정상 (Pass)</div>
+              <div id="excel-subject-stat-success" class="report-stat-value success">0 명</div>
+            </div>
+            <div class="report-stat-box">
+              <div class="report-stat-title">주의 (유의)</div>
+              <div id="excel-subject-stat-warning" class="report-stat-value warning">0 명</div>
+            </div>
+            <div class="report-stat-box">
+              <div class="report-stat-title">오류 (초과/금지)</div>
+              <div id="excel-subject-stat-danger" class="report-stat-value danger">0 명</div>
+            </div>
+          </div>
+
+          <div>
+            <h4 style="font-size: 14px; color: var(--text-muted); margin-bottom: 8px;">📋 점검 결과 목록</h4>
+            <div class="grid-table-wrapper">
+              <table class="grid-table">
+                <thead>
+                  <tr>
+                    <th>학적</th>
+                    <th>이름</th>
+                    <th>글자수(Bytes)</th>
+                    <th>종결어미</th>
+                    <th>금지어 발견</th>
+                    <th>상태</th>
+                    <th>조치</th>
+                  </tr>
+                </thead>
+                <tbody id="excel-subject-grid-tbody">
+                  <tr>
+                    <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 40px 0;">
+                      교과세특 엑셀 파일을 업로드하면 점검이 시작됩니다.
                     </td>
                   </tr>
                 </tbody>
@@ -1785,7 +1871,12 @@
       "ICJ": "국제 사법 재판소|영문 약칭 대신 '국제사법재판소' 또는 '국제 분쟁 중재 기구'로 순화하세요.",
       "국제사법재판소": "국제 사법 기구|'세계 최고 사법 심판소' 등으로 우회 기술하세요.",
       "IPCC": "기후 변화에 관한 정부간 협의체|영문 약어 기재를 지양하고 '기후변화에 관한 정부간 협의체' 또는 '기후 변화 국제 연구 조직' 등으로 기재해 주세요.",
-      "기후변화에 관한 정부간 협의체": "기후 변화 국제 연구 협의체|'다자간 기후 연구 연합체' 등으로 순화해 기재하세요."
+      "기후변화에 관한 정부간 협의체": "기후 변화 국제 연구 협의체|'다자간 기후 연구 연합체' 등으로 순화해 기재하세요.",
+
+      // 11. 학교 식별 정보 (전면 기재 금지 - 블라인드 원칙)
+      "부천": "기재 불가|학교 소재지(부천시) 등 지역명이 기재되면 학교가 특정될 수 있어 블라인드 원칙에 위배됩니다. 지역명을 삭제하거나 '본교 인근 지역', '지역사회' 등으로 우회 서술하세요.",
+      "중동": "기재 불가|학교 소재지(중동) 등 구체적 지명이 기재되면 학교가 특정될 수 있어 블라인드 원칙에 위배됩니다. '학교 주변 지역', '지역 공동체' 등으로 우회 서술하세요.",
+      "심원": "기재 불가|학교명(심원고등학교)이 직·간접적으로 노출되면 블라인드 원칙에 위배됩니다. 학교명 대신 '본교', '우리 학교' 등으로 기재하세요."
     };
 
     const QA_DATABASE = [
@@ -6454,6 +6545,56 @@
       document.getElementById("modal-cancel-btn").addEventListener("click", closeModal);
       document.getElementById("modal-save-btn").addEventListener("click", saveModalChanges);
       document.getElementById("modal-textarea").addEventListener("input", triggerModalAnalysis);
+
+      // Subject Inspector logic
+      const subjectDropzone = document.getElementById("excel-subject-dropzone");
+      const subjectFileInput = document.getElementById("excel-subject-file-input");
+
+      if (subjectDropzone && subjectFileInput) {
+        subjectDropzone.addEventListener("click", () => subjectFileInput.click());
+        subjectDropzone.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          subjectDropzone.classList.add("dragover");
+        });
+        subjectDropzone.addEventListener("dragleave", () => subjectDropzone.classList.remove("dragover"));
+        subjectDropzone.addEventListener("drop", (e) => {
+          e.preventDefault();
+          subjectDropzone.classList.remove("dragover");
+          if (e.dataTransfer.files.length) {
+            handleExcelSubjectFile(e.dataTransfer.files[0]);
+          }
+        });
+
+        subjectFileInput.addEventListener("change", (e) => {
+          if (e.target.files.length) {
+            handleExcelSubjectFile(e.target.files[0]);
+          }
+        });
+
+        document.getElementById("excel-subject-template-btn").addEventListener("click", downloadExcelSubjectTemplate);
+        document.getElementById("excel-subject-export-btn").addEventListener("click", () => exportInspectionReport(true));
+      }
+
+      // Populate Subject Dropdown based on Grade
+      const subjectGradeSelect = document.getElementById("excel-subject-grade-select");
+      const subjectSelect = document.getElementById("excel-subject-select");
+      
+      if (subjectGradeSelect && subjectSelect && typeof SUBJECT_ROSTERS !== 'undefined') {
+        subjectGradeSelect.addEventListener("change", (e) => {
+          const grade = e.target.value;
+          subjectSelect.innerHTML = '<option value="">과목을 선택하세요</option>';
+          if (grade && SUBJECT_ROSTERS[grade]) {
+            Object.keys(SUBJECT_ROSTERS[grade]).sort().forEach(subject => {
+              const opt = document.createElement("option");
+              opt.value = subject;
+              opt.textContent = subject;
+              subjectSelect.appendChild(opt);
+            });
+          } else {
+            subjectSelect.innerHTML = '<option value="">학년을 먼저 선택하세요</option>';
+          }
+        });
+      }
     }
 
     function generateWorkbookData(categoryKey, g, b) {
@@ -7319,6 +7460,150 @@
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+    }
+
+    function downloadExcelSubjectTemplate() {
+      const gradeKey = document.getElementById("excel-subject-grade-select").value;
+      const subjectKey = document.getElementById("excel-subject-select").value;
+      if (!gradeKey || !subjectKey) {
+        alert("학년과 과목을 모두 선택해주세요.");
+        return;
+      }
+      
+      if (typeof TEMPLATE_SUBJECT_B64 !== "undefined") {
+        async function buildSubjectTemplate() {
+           try {
+             const binary_string = window.atob(TEMPLATE_SUBJECT_B64);
+             const len = binary_string.length;
+             const bytes = new Uint8Array(len);
+             for (let i = 0; i < len; i++) {
+                 bytes[i] = binary_string.charCodeAt(i);
+             }
+             
+             const zip = await JSZip.loadAsync(bytes);
+             
+             const wbXmlStr = await zip.file("xl/workbook.xml").async("text");
+             const parser = new DOMParser();
+             const wbDoc = parser.parseFromString(wbXmlStr, "text/xml");
+             const sheets = wbDoc.getElementsByTagName("sheet");
+             let targetSheetId = null;
+             for (let i=0; i<sheets.length; i++) {
+               if (sheets[i].getAttribute("name").includes("교과세특")) {
+                 targetSheetId = sheets[i].getAttribute("r:id");
+                 break;
+               }
+             }
+             if (!targetSheetId) targetSheetId = "rId1";
+             
+             const relsXmlStr = await zip.file("xl/_rels/workbook.xml.rels").async("text");
+             const relsDoc = parser.parseFromString(relsXmlStr, "text/xml");
+             const rels = relsDoc.getElementsByTagName("Relationship");
+             let sheetFileName = "worksheets/sheet1.xml";
+             for (let i=0; i<rels.length; i++) {
+               if (rels[i].getAttribute("Id") === targetSheetId) {
+                 sheetFileName = rels[i].getAttribute("Target");
+                 break;
+               }
+             }
+             if (sheetFileName.startsWith("/")) sheetFileName = sheetFileName.substring(1);
+             else if (!sheetFileName.startsWith("xl/")) sheetFileName = "xl/" + sheetFileName;
+             
+             let sheetXmlStr = await zip.file(sheetFileName).async("text");
+             const sheetDoc = parser.parseFromString(sheetXmlStr, "text/xml");
+             const sheetData = sheetDoc.getElementsByTagName("sheetData")[0];
+             
+             const roster = (typeof SUBJECT_ROSTERS !== 'undefined' && SUBJECT_ROSTERS[gradeKey] && SUBJECT_ROSTERS[gradeKey][subjectKey]) ? SUBJECT_ROSTERS[gradeKey][subjectKey] : [];
+             
+             function getOrCreateRow(rIdx) {
+               let rows = sheetData.getElementsByTagName("row");
+               for(let i=0; i<rows.length; i++) {
+                 if (rows[i].getAttribute("r") == rIdx) return rows[i];
+               }
+               const ns = sheetDoc.documentElement.namespaceURI;
+               let newRow = sheetDoc.createElementNS(ns, "row");
+               newRow.setAttribute("r", rIdx);
+               sheetData.appendChild(newRow);
+               return newRow;
+             }
+             
+             function setCellValue(row, colRef, rowIdx, val, isString) {
+                const ns = sheetDoc.documentElement.namespaceURI;
+                const cellRef = colRef + rowIdx;
+                let cNode = null;
+                const cells = row.getElementsByTagName("c");
+                for(let i=0; i<cells.length; i++) {
+                  if (cells[i].getAttribute("r") == cellRef) {
+                    cNode = cells[i]; break;
+                  }
+                }
+                if (!cNode) {
+                  cNode = sheetDoc.createElementNS(ns, "c");
+                  cNode.setAttribute("r", cellRef);
+                  row.appendChild(cNode);
+                }
+                
+                while(cNode.firstChild) cNode.removeChild(cNode.firstChild);
+                
+                if (isString) {
+                  cNode.setAttribute("t", "inlineStr");
+                  const isNode = sheetDoc.createElementNS(ns, "is");
+                  const tNode = sheetDoc.createElementNS(ns, "t");
+                  tNode.textContent = val;
+                  isNode.appendChild(tNode);
+                  cNode.appendChild(isNode);
+                } else {
+                  cNode.setAttribute("t", "n");
+                  const vNode = sheetDoc.createElementNS(ns, "v");
+                  vNode.textContent = val;
+                  cNode.appendChild(vNode);
+                }
+             }
+
+             function sortCellsInRow(row) {
+                const cells = Array.from(row.getElementsByTagName("c"));
+                cells.sort((a,b) => {
+                   const rA = a.getAttribute("r").replace(/[0-9]/g, "");
+                   const rB = b.getAttribute("r").replace(/[0-9]/g, "");
+                   if (rA.length !== rB.length) return rA.length - rB.length;
+                   return rA.localeCompare(rB);
+                });
+                cells.forEach(c => row.appendChild(c));
+             }
+             
+             roster.forEach((student, idx) => {
+                const rowIdx = 4 + idx + 1; // A5는 row=5
+                const row = getOrCreateRow(rowIdx);
+                setCellValue(row, "A", rowIdx, student.class || "", false);
+                setCellValue(row, "B", rowIdx, student.number || "", false);
+                setCellValue(row, "C", rowIdx, student.name || "", true);
+                sortCellsInRow(row);
+             });
+             
+             const allRows = Array.from(sheetData.getElementsByTagName("row"));
+             allRows.sort((a,b) => parseInt(a.getAttribute("r")) - parseInt(b.getAttribute("r")));
+             allRows.forEach(r => sheetData.appendChild(r));
+             
+             const serializer = new XMLSerializer();
+             const newSheetXml = serializer.serializeToString(sheetDoc);
+             zip.file(sheetFileName, newSheetXml);
+             
+             const content = await zip.generateAsync({type:"blob"});
+             const url = URL.createObjectURL(content);
+             const a = document.createElement("a");
+             a.href = url;
+             a.download = `2026_나이스_바이트_계산기(교과세특)_${gradeKey}학년_${subjectKey}.xlsm`;
+             a.click();
+             URL.revokeObjectURL(url);
+             
+           } catch(e) {
+             console.error("교과교사 템플릿 생성 실패:", e);
+             alert("템플릿 생성 중 오류가 발생했습니다. 개발자 도구를 확인해주세요.");
+           }
+        }
+        buildSubjectTemplate();
+      } else {
+        alert("템플릿 데이터가 존재하지 않습니다.");
+      }
     }
 
     function downloadClassExcelFromHeader() {
@@ -8446,6 +8731,223 @@
         `;
         container.appendChild(row);
       });
+    }
+
+    function handleExcelSubjectFile(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        
+        let targetSheetName = workbook.SheetNames.find(name => name.includes("교과세특")) || workbook.SheetNames[0];
+        
+        const sheet = workbook.Sheets[targetSheetName];
+        if (!sheet) {
+          alert("시트를 찾을 수 없습니다.");
+          return;
+        }
+
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        if (rows.length === 0) {
+          alert("엑셀 파일이 비어 있습니다. 양식을 확인해 주세요.");
+          return;
+        }
+
+        let headerIdx = -1;
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          if (row && row.includes("번호") && (row.includes("이름") || row.includes("성명"))) {
+            headerIdx = i;
+            break;
+          }
+        }
+
+        if (headerIdx === -1) {
+          alert("올바른 기재점검 시트 양식이 아닙니다. (번호와 이름 컬럼을 찾을 수 없습니다)");
+          return;
+        }
+
+        const headers = rows[headerIdx];
+        const gradeCol = headers.indexOf("학년");
+        const classCol = headers.indexOf("반");
+        const numCol = headers.indexOf("번호");
+        const nameCol = headers.findIndex(h => h === "이름" || h === "성명");
+        const contentCol = headers.findIndex(h => h === "기재내용" || h === "내용" || h === "텍스트");
+        const sem1Col = headers.indexOf("1학기");
+        const sem2Col = headers.indexOf("2학기");
+
+        if (numCol === -1 || nameCol === -1) {
+          alert("엑셀 머리글 중 '번호'와 '이름' 컬럼이 반드시 존재해야 합니다.");
+          return;
+        }
+
+        excelData = [];
+
+        for (let i = headerIdx + 1; i < rows.length; i++) {
+          const row = rows[i];
+          if (!row) continue;
+          
+          const numVal = row[numCol];
+          const nameVal = row[nameCol];
+          if (numVal === undefined || numVal === null || numVal === "" || !nameVal) {
+            continue;
+          }
+          
+          const g = (gradeCol !== -1 && row[gradeCol]) ? row[gradeCol].toString().trim() : "1";
+          const c = (classCol !== -1 && row[classCol]) ? row[classCol].toString().trim() : "1";
+          
+          let contentVal = "";
+          if (sem1Col !== -1 || sem2Col !== -1) {
+            const sem1 = (sem1Col !== -1 && row[sem1Col]) ? row[sem1Col].toString() : "";
+            const sem2 = (sem2Col !== -1 && row[sem2Col]) ? row[sem2Col].toString() : "";
+            if (sem1 && sem2) {
+              contentVal = sem1 + "\n" + sem2;
+            } else {
+              contentVal = sem1 || sem2;
+            }
+          } else if (contentCol !== -1) {
+            contentVal = row[contentCol] ? row[contentCol].toString() : "";
+          }
+
+          excelData.push({
+            grade: parseInt(g) || 1,
+            classNum: parseInt(c) || 1,
+            number: parseInt(numVal),
+            name: nameVal.toString().trim(),
+            content: contentVal.trim()
+          });
+        }
+
+        if (excelData.length === 0) {
+          alert("불러온 학생 데이터가 없습니다.");
+          return;
+        }
+
+        runSubjectBatchInspection();
+        document.getElementById("excel-subject-export-btn").disabled = false;
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function runSubjectBatchInspection() {
+      const config = LIMITS["subject"];
+      let total = excelData.length;
+      let success = 0;
+      let warning = 0;
+      let danger = 0;
+
+      const tbody = document.getElementById("excel-subject-grid-tbody");
+      tbody.innerHTML = "";
+
+      const gradeKey = document.getElementById("excel-subject-grade-select").value;
+      const subjectKey = document.getElementById("excel-subject-select").value;
+      const roster = (typeof SUBJECT_ROSTERS !== 'undefined' && SUBJECT_ROSTERS[gradeKey] && SUBJECT_ROSTERS[gradeKey][subjectKey]) ? SUBJECT_ROSTERS[gradeKey][subjectKey] : [];
+
+      excelData.forEach((row, idx) => {
+        const text = row.content;
+        const charCount = text.length;
+        const byteCount = calculateBytes(text);
+
+        let isDanger = false;
+        let isWarning = false;
+        let issuesText = [];
+
+        if (byteCount > config.maxByte) {
+          isDanger = true;
+          issuesText.push("글자수초과");
+        } else if (byteCount > config.maxByte * 0.9) {
+          isWarning = true;
+        }
+
+        let nonNoun = false;
+        if (text.length > 0) {
+          const sentences = text.split(/[.\n]/).map(s => s.trim()).filter(s => s.length > 0);
+          sentences.forEach(sentence => {
+            const lastChar = sentence.slice(-1);
+            if (/[다요오죠체서라]$/.test(sentence) || !/[함임음됨ㅁㄴ]$/.test(lastChar)) {
+              nonNoun = true;
+            }
+          });
+        }
+        if (nonNoun) {
+          isWarning = true;
+          issuesText.push("종결어미");
+        }
+
+        let bannedMatched = false;
+        Object.keys(BANNED_WORDS).forEach(banned => {
+          if (text.includes(banned)) {
+            bannedMatched = true;
+            const parts = BANNED_WORDS[banned].split("|");
+            const cleanAlt = parts[0];
+            const isCritical = ["대회", "수상", "특허", "논문", "어학연수", "부모", "기재 불가"].some(word => banned.includes(word) || cleanAlt.includes(word));
+            if (isCritical) {
+              isDanger = true;
+              if (!issuesText.includes("금지어발견")) issuesText.push("금지어발견");
+            } else {
+              isWarning = true;
+              if (!issuesText.includes("순화권장")) issuesText.push("순화권장");
+            }
+          }
+        });
+
+        // Roster Verification
+        let rosterMsg = "";
+        let rosterError = false;
+        const name = (row.name || "").trim();
+
+        if (roster.length > 0) {
+          const dbStudent = roster.find(s => s.class == row.classNum && s.number == row.number);
+          if (dbStudent) {
+            if (dbStudent.name.trim() !== name) {
+              rosterError = true;
+              isDanger = true;
+              rosterMsg = `<div style="font-size: 11px; color: #f87171; font-weight: normal; margin-top: 2px;">⚠️ 명렬표: ${dbStudent.name}</div>`;
+              if (!issuesText.includes("이름불일치")) issuesText.push("이름불일치");
+            }
+          } else {
+            rosterError = true;
+            isDanger = true;
+            rosterMsg = `<div style="font-size: 11px; color: #f87171; font-weight: normal; margin-top: 2px;">⚠️ 수강생 아님</div>`;
+            if (!issuesText.includes("수강생아님")) issuesText.push("수강생아님");
+          }
+        }
+
+        let statusText = "정상";
+        let statusClass = "success";
+        if (isDanger) {
+          danger++;
+          statusText = "오류";
+          statusClass = "danger";
+        } else if (isWarning) {
+          warning++;
+          statusText = "주의";
+          statusClass = "warning";
+        } else {
+          success++;
+        }
+
+        row.byteCount = byteCount;
+        row.status = statusText;
+        row.issues = issuesText.join(", ") || "-";
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${row.grade || 1}-${row.classNum}-${row.number}</td>
+          <td style="font-weight: 700;">${row.name}${rosterMsg}</td>
+          <td>${charCount}자 (${byteCount}B)</td>
+          <td>${nonNoun ? '⚠️ 권장안함' : '✅ 명사형'}</td>
+          <td>${bannedMatched ? '🚨 금지어감지' : '✅ 없음'}</td>
+          <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+          <td><button class="issue-replace-btn" onclick="openEditModal(${idx})">수정하기</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById("excel-subject-stat-total").textContent = `${total} 명`;
+      document.getElementById("excel-subject-stat-success").textContent = `${success} 명`;
+      document.getElementById("excel-subject-stat-warning").textContent = `${warning} 명`;
+      document.getElementById("excel-subject-stat-danger").textContent = `${danger} 명`;
     }
 
   </script>
