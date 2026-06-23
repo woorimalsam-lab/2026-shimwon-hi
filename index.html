@@ -1805,8 +1805,6 @@
       "ThinkerBell": "온라인 형성평가 도구|'상호작용형 학습 플랫폼' 등으로 표현하세요.",
       "띵커벨": "온라인 형성평가 도구|'상호작용형 학습 플랫폼' 등으로 표현하세요.",
       "Zoom": "화상 회의 시스템|'실시간 온라인 화상 회의 툴' 등으로 완곡히 표현하는 것이 좋습니다.",
-      "줌": "화상 회의 시스템|'실시간 온라인 화상 회의 툴' 등으로 완곡히 표현하는 것이 좋습니다.",
-
       // 8. 진단 도구 및 인공지능 명칭 (순화 권장)
       "MBTI": "성격 유형|MBTI 등 대중적 성격 유형 진단 검사는 공식 학생부 기재에 적합하지 않으므로 '성격 특성 분석', '행동 성향 진단' 등으로 순화하세요.",
       "엠비티아이": "성격 유형|성격 유형 검사 명칭 대신 '성격 특성' 등으로 순화하세요.",
@@ -6395,19 +6393,23 @@
 
       // 2. Ending verb check
       if (text.trim().length > 0) {
-        const sentences = text.split(/[.\n]/).map(s => s.trim()).filter(s => s.length > 0);
+        let cleanText = text.replace(/["“”'‘][^"“”'’]*["“”'’]/g, '').replace(/\([^)]*\)/g, '').replace(/<[^>]*>/g, '').replace(/\[[^\]]*\]/g, '').replace(/【[^】]*】/g, '');
+        const sentences = cleanText.split(/[.\n]/).map(s => s.trim()).filter(s => s.length > 0);
         let nonNounEndingCount = 0;
-        sentences.forEach(sentence => {
-          const lastChar = sentence.slice(-1);
-          if (/[다요오죠체서라]$/.test(sentence) || !/[함임음됨ㅁㄴ]$/.test(lastChar)) {
+        if (cleanText.trim().endsWith('.')) {
+          nonNounEndingCount = 0;
+        } else if (sentences.length > 0) {
+          const lastSentence = sentences[sentences.length - 1];
+          const lastChar = lastSentence.slice(-1);
+          if (/[다요오죠체서라]$/.test(lastSentence) || !/[함임음됨ㅁㄴ기]$/.test(lastChar)) {
             nonNounEndingCount++;
           }
-        });
+        }
         if (nonNounEndingCount > 0) {
           issues.push({
             type: "warning",
-            header: "종결 어미 격식 검토 권장",
-            msg: `일부 문장이 명사형 어미(~함, ~임) 대신 일반 대화/서술형 어미(~다, ~요)로 작성된 것으로 의심됩니다. (객관적 기재 격식 준수 요망)`
+            header: "문장 종결(마무리) 검토 권장",
+            msg: `맨 마지막 문장이 명사형 어미(~함, ~임)로 완성되지 않았거나 서술형 어미(~다, ~요)로 끝난 것으로 의심됩니다. (입력 내용이 올바르게 끝맺음 되었는지 확인 요망)`
           });
         }
       }
@@ -6418,6 +6420,13 @@
         const regex = new RegExp(banned, "gi");
         let match;
         while ((match = regex.exec(text)) !== null) {
+          if (banned === "사설") {
+            const before = match.index > 0 ? text[match.index - 1] : " ";
+            const after = match.index + match[0].length < text.length ? text[match.index + match[0].length] : " ";
+            if (/[가-힣]/.test(before) || /[가-힣]/.test(after)) {
+              continue;
+            }
+          }
           wordMatches.push({
             word: match[0],
             alt: BANNED_WORDS[banned]
@@ -7798,13 +7807,19 @@
 
         let nonNoun = false;
         if (text.length > 0) {
-          const sentences = text.split(/[.\n]/).map(s => s.trim()).filter(s => s.length > 0);
-          sentences.forEach(sentence => {
-            const lastChar = sentence.slice(-1);
-            if (/[다요오죠체서라]$/.test(sentence) || !/[함임음됨ㅁㄴ]$/.test(lastChar)) {
-              nonNoun = true;
+          let cleanText = text.replace(/["“”'‘][^"“”'’]*["“”'’]/g, '').replace(/\([^)]*\)/g, '').replace(/<[^>]*>/g, '').replace(/\[[^\]]*\]/g, '').replace(/【[^】]*】/g, '');
+          if (cleanText.trim().endsWith('.')) {
+            nonNoun = false;
+          } else {
+            const sentences = cleanText.split(/[.\n]/).map(s => s.trim()).filter(s => s.length > 0);
+            if (sentences.length > 0) {
+              const lastSentence = sentences[sentences.length - 1];
+              const lastChar = lastSentence.slice(-1);
+              if (/[다요오죠체서라]$/.test(lastSentence) || !/[함임음됨ㅁㄴ기]$/.test(lastChar)) {
+                nonNoun = true;
+              }
             }
-          });
+          }
         }
         if (nonNoun) {
           isWarning = true;
@@ -7814,6 +7829,10 @@
         let bannedMatched = false;
         Object.keys(BANNED_WORDS).forEach(banned => {
           if (text.includes(banned)) {
+            if (banned === "사설") {
+              const regex = /(?:^|[^가-힣])사설(?:[^가-힣]|$)/;
+              if (!regex.test(text)) return;
+            }
             bannedMatched = true;
             const parts = BANNED_WORDS[banned].split("|");
             const cleanAlt = parts[0];
@@ -8862,13 +8881,19 @@
 
         let nonNoun = false;
         if (text.length > 0) {
-          const sentences = text.split(/[.\n]/).map(s => s.trim()).filter(s => s.length > 0);
-          sentences.forEach(sentence => {
-            const lastChar = sentence.slice(-1);
-            if (/[다요오죠체서라]$/.test(sentence) || !/[함임음됨ㅁㄴ]$/.test(lastChar)) {
-              nonNoun = true;
+          let cleanText = text.replace(/["“”'‘][^"“”'’]*["“”'’]/g, '').replace(/\([^)]*\)/g, '').replace(/<[^>]*>/g, '').replace(/\[[^\]]*\]/g, '').replace(/【[^】]*】/g, '');
+          if (cleanText.trim().endsWith('.')) {
+            nonNoun = false;
+          } else {
+            const sentences = cleanText.split(/[.\n]/).map(s => s.trim()).filter(s => s.length > 0);
+            if (sentences.length > 0) {
+              const lastSentence = sentences[sentences.length - 1];
+              const lastChar = lastSentence.slice(-1);
+              if (/[다요오죠체서라]$/.test(lastSentence) || !/[함임음됨ㅁㄴ기]$/.test(lastChar)) {
+                nonNoun = true;
+              }
             }
-          });
+          }
         }
         if (nonNoun) {
           isWarning = true;
@@ -8878,6 +8903,10 @@
         let bannedMatched = false;
         Object.keys(BANNED_WORDS).forEach(banned => {
           if (text.includes(banned)) {
+            if (banned === "사설") {
+              const regex = /(?:^|[^가-힣])사설(?:[^가-힣]|$)/;
+              if (!regex.test(text)) return;
+            }
             bannedMatched = true;
             const parts = BANNED_WORDS[banned].split("|");
             const cleanAlt = parts[0];
