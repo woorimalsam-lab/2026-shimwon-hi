@@ -1055,6 +1055,36 @@
   <script src="subject_rosters.js"></script>
 </head>
 <body>
+  <!-- Password Protection Overlay -->
+  <div id="password-overlay" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: #0f172a; z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column;">
+    <div style="background-color: #1e293b; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); text-align: center; max-width: 400px; width: 100%; box-sizing: border-box;">
+      <div style="font-size: 40px; margin-bottom: 16px;">🔒</div>
+      <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">심원고 생기부 점검</h2>
+      <p style="color: #94a3b8; font-size: 14px; margin-bottom: 24px;">접근 권한이 필요합니다. 비밀번호를 입력해 주세요.</p>
+      <input type="password" id="site-password" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #334155; background-color: #0b0f19; color: white; margin-bottom: 16px; font-size: 14px; box-sizing: border-box;" placeholder="비밀번호 입력">
+      <button onclick="checkPassword()" style="width: 100%; padding: 12px; background: linear-gradient(135deg, #0ea5e9, #2563eb); border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer; font-size: 14px; box-sizing: border-box;">확인</button>
+      <div id="password-error" style="color: #ef4444; font-size: 13px; margin-top: 12px; display: none;">비밀번호가 일치하지 않습니다.</div>
+    </div>
+  </div>
+  <script>
+    function checkPassword() {
+      const pwd = document.getElementById("site-password").value;
+      if (pwd === "hi26shim") {
+        document.getElementById("password-overlay").style.display = "none";
+      } else {
+        document.getElementById("password-error").style.display = "block";
+      }
+    }
+    document.addEventListener("DOMContentLoaded", function() {
+      const input = document.getElementById("site-password");
+      if(input) {
+        input.addEventListener("keyup", function(e) {
+          if (e.key === "Enter") checkPassword();
+        });
+        input.focus();
+      }
+    });
+  </script>
 
   <!-- Sidebar Navigation -->
   <div class="sidebar">
