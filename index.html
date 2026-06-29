@@ -1166,31 +1166,31 @@
           <ul class="category-list">
             <li class="category-item active" data-category="jaju" data-limit="500">
               <span>자율활동</span>
-              <span class="category-badge">500자</span>
+              <span class="category-badge">1500B</span>
             </li>
             <li class="category-item" data-category="donga" data-limit="500">
               <span>동아리활동</span>
-              <span class="category-badge">500자</span>
+              <span class="category-badge">1500B</span>
             </li>
             <li class="category-item" data-category="jinro" data-limit="500">
               <span>진로활동</span>
-              <span class="category-badge">500자</span>
+              <span class="category-badge">1500B</span>
             </li>
             <li class="category-item" data-category="bongsa" data-limit="50">
               <span>봉사활동실적</span>
-              <span class="category-badge">50자</span>
+              <span class="category-badge">150B</span>
             </li>
             <li class="category-item" data-category="subject" data-limit="500">
               <span>교과세특</span>
-              <span class="category-badge">500자</span>
+              <span class="category-badge">1500B</span>
             </li>
             <li class="category-item" data-category="personal" data-limit="500">
               <span>개인세특</span>
-              <span class="category-badge">500자</span>
+              <span class="category-badge">1500B</span>
             </li>
             <li class="category-item" data-category="comprehensive" data-limit="300">
               <span>행발 및 종합의견</span>
-              <span class="category-badge">300자</span>
+              <span class="category-badge">900B</span>
             </li>
           </ul>
         </div>
@@ -1205,7 +1205,7 @@
             
             <div class="gauge-container">
               <div class="gauge-labels">
-                <span id="char-count">글자 수: 0자 (권장 500자)</span>
+                <span id="char-count">글자 수: 0자</span>
                 <span id="byte-count">바이트: 0 / 1500 Bytes</span>
               </div>
               <div class="gauge-bar-bg">
@@ -1663,7 +1663,7 @@
         <textarea id="modal-textarea" class="main-editor" style="height: 250px; font-size: 14px;"></textarea>
         
         <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted);">
-          <span id="modal-char-count">글자 수: 0자 (권장 500자)</span>
+          <span id="modal-char-count">글자 수: 0자</span>
           <span id="modal-byte-count">바이트: 0 / 1500 Bytes</span>
         </div>
 
@@ -6384,11 +6384,9 @@
       const charCount = text.length;
       const byteCount = calculateBytes(text);
 
-      // 실제 NEIS 한도는 바이트 기준이므로, 글자 수는 참고용(권장)으로만 표시한다.
-      // (숫자·영문·공백이 섞이면 글자 수가 권장치를 넘어도 바이트가 한도 이내일 수 있으며 이는 정상)
-      const charEl = document.getElementById("char-count");
-      charEl.textContent = `글자 수: ${charCount}자 (권장 ${config.maxChar}자)`;
-      charEl.style.color = byteCount > config.maxByte ? "#f87171" : "";
+      // NEIS는 '글자 수'가 아닌 '바이트' 단위로만 입력 한도를 적용한다(한글 3 / 영문·숫자·공백 1바이트).
+      // 따라서 글자 수는 한도 없이 순수 참고 정보로만 표시하고, 한도 판단은 바이트로만 한다.
+      document.getElementById("char-count").textContent = `글자 수: ${charCount}자`;
       document.getElementById("byte-count").textContent = `바이트: ${byteCount} / ${config.maxByte} Bytes`;
 
       const gaugeFill = document.getElementById("gauge-fill");
@@ -7966,10 +7964,8 @@
       const charCount = text.length;
       const byteCount = calculateBytes(text);
 
-      // 실제 NEIS 한도는 바이트 기준이므로, 글자 수는 참고용(권장)으로만 표시한다.
-      const modalCharEl = document.getElementById("modal-char-count");
-      modalCharEl.textContent = `글자 수: ${charCount}자 (권장 ${config.maxChar}자)`;
-      modalCharEl.style.color = byteCount > config.maxByte ? "#f87171" : "";
+      // NEIS는 '글자 수'가 아닌 '바이트' 단위로만 입력 한도를 적용하므로 글자 수는 참고 정보로만 표시한다.
+      document.getElementById("modal-char-count").textContent = `글자 수: ${charCount}자`;
       document.getElementById("modal-byte-count").textContent = `바이트: ${byteCount} / ${config.maxByte} Bytes`;
 
       analyzeIssues(text, byteCount, config, "modal-issues", "issue-count");
