@@ -1205,7 +1205,7 @@
             
             <div class="gauge-container">
               <div class="gauge-labels">
-                <span id="char-count">글자 수: 0 / 500자</span>
+                <span id="char-count">글자 수: 0자 (권장 500자)</span>
                 <span id="byte-count">바이트: 0 / 1500 Bytes</span>
               </div>
               <div class="gauge-bar-bg">
@@ -1663,7 +1663,7 @@
         <textarea id="modal-textarea" class="main-editor" style="height: 250px; font-size: 14px;"></textarea>
         
         <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted);">
-          <span id="modal-char-count">글자 수: 0 / 500자</span>
+          <span id="modal-char-count">글자 수: 0자 (권장 500자)</span>
           <span id="modal-byte-count">바이트: 0 / 1500 Bytes</span>
         </div>
 
@@ -6384,7 +6384,11 @@
       const charCount = text.length;
       const byteCount = calculateBytes(text);
 
-      document.getElementById("char-count").textContent = `글자 수: ${charCount} / ${config.maxChar}자`;
+      // 실제 NEIS 한도는 바이트 기준이므로, 글자 수는 참고용(권장)으로만 표시한다.
+      // (숫자·영문·공백이 섞이면 글자 수가 권장치를 넘어도 바이트가 한도 이내일 수 있으며 이는 정상)
+      const charEl = document.getElementById("char-count");
+      charEl.textContent = `글자 수: ${charCount}자 (권장 ${config.maxChar}자)`;
+      charEl.style.color = byteCount > config.maxByte ? "#f87171" : "";
       document.getElementById("byte-count").textContent = `바이트: ${byteCount} / ${config.maxByte} Bytes`;
 
       const gaugeFill = document.getElementById("gauge-fill");
@@ -6416,8 +6420,8 @@
       if (byteCount > config.maxByte) {
         issues.push({
           type: "danger",
-          header: "글자 수(바이트) 초과",
-          msg: `허용 한도인 ${config.maxByte} Bytes를 초과했습니다. 나이스 입력 시 내용이 잘릴 수 있으니 축소하세요.`
+          header: "허용 바이트 초과",
+          msg: `허용 한도인 ${config.maxByte} Bytes를 초과했습니다. 나이스 입력 시 내용이 잘릴 수 있으니 축소하세요. (글자 수가 아닌 바이트 기준입니다)`
         });
       }
 
@@ -7962,7 +7966,10 @@
       const charCount = text.length;
       const byteCount = calculateBytes(text);
 
-      document.getElementById("modal-char-count").textContent = `글자 수: ${charCount} / ${config.maxChar}자`;
+      // 실제 NEIS 한도는 바이트 기준이므로, 글자 수는 참고용(권장)으로만 표시한다.
+      const modalCharEl = document.getElementById("modal-char-count");
+      modalCharEl.textContent = `글자 수: ${charCount}자 (권장 ${config.maxChar}자)`;
+      modalCharEl.style.color = byteCount > config.maxByte ? "#f87171" : "";
       document.getElementById("modal-byte-count").textContent = `바이트: ${byteCount} / ${config.maxByte} Bytes`;
 
       analyzeIssues(text, byteCount, config, "modal-issues", "issue-count");
