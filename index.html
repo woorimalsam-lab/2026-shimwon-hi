@@ -1045,6 +1045,109 @@
     .modal-close-btn:hover {
       color: white;
     }
+
+    /* ============================================================
+       반응형(연동형) 레이아웃 — 모바일 / 태블릿 대응
+       ============================================================ */
+    /* 모바일 전용 요소: 기본(데스크톱)에서는 숨김 */
+    .mobile-topbar { display: none; }
+    .sidebar-overlay { display: none; }
+
+    /* 태블릿: 항목 선택 + 본문 2단을 1단으로 */
+    @media (max-width: 1024px) {
+      .dashboard-grid { grid-template-columns: 1fr; }
+    }
+
+    /* 모바일/소형 태블릿: 사이드바를 슬라이드 드로어로 전환 */
+    @media (max-width: 820px) {
+      body { flex-direction: column; }
+
+      /* 상단 모바일 바 + 햄버거 버튼 */
+      .mobile-topbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        position: sticky;
+        top: 0;
+        z-index: 60;
+        background: #0d1321;
+        border-bottom: 1px solid #334155;
+        padding: 10px 14px;
+      }
+      .hamburger-btn {
+        background: #1e293b;
+        color: #f8fafc;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        width: 42px;
+        height: 42px;
+        font-size: 20px;
+        line-height: 1;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+      .mobile-topbar .mobile-title {
+        font-weight: 800;
+        font-size: 15px;
+        background: linear-gradient(135deg, #38bdf8, #10b981);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      /* 사이드바: 화면 밖에서 슬라이드 인 */
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 82%;
+        max-width: 300px;
+        z-index: 80;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        overflow-y: auto;
+      }
+      .sidebar.open { transform: translateX(0); }
+
+      /* 드로어 열렸을 때 뒤 배경 어둡게 */
+      .sidebar-overlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 70;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+      }
+      .sidebar-overlay.open { opacity: 1; pointer-events: auto; }
+
+      .main-content { padding: 16px; max-height: none; }
+      .card { padding: 16px; }
+
+      /* 헤더: 제목과 학생정보 바를 세로로 */
+      header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      .student-info-bar { flex-wrap: wrap; gap: 10px; padding: 12px; }
+      .info-input-group { flex: 1 1 auto; }
+      .info-input-group label { white-space: nowrap; }
+      .info-input-group select,
+      .info-input-group .info-input { flex: 1; min-width: 0; }
+      .info-input-group[style*="margin-left"] { margin-left: 0 !important; width: 100%; }
+
+      /* 인라인으로 고정된 다단 그리드 → 1열 */
+      [style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+
+      /* 넓은 표는 가로 스크롤 */
+      .tab-content table { display: block; overflow-x: auto; white-space: nowrap; }
+
+      /* 모달 폭 축소 */
+      .modal-card { width: 94vw; max-width: 94vw; padding: 18px; }
+    }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="template_jaju.js"></script>
@@ -1086,8 +1189,17 @@
     });
   </script>
 
+  <!-- Mobile Top Bar (모바일에서만 표시) -->
+  <div class="mobile-topbar">
+    <button class="hamburger-btn" id="hamburger-btn" aria-label="메뉴 열기">☰</button>
+    <span class="mobile-title">📋 심원고 생기부 점검</span>
+  </div>
+
+  <!-- Sidebar Drawer Overlay (모바일 드로어 배경) -->
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
   <!-- Sidebar Navigation -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <div class="logo-container">
       <div class="logo-title">
         <span>📋</span> 심원고 생기부 점검
@@ -9018,6 +9130,40 @@
       document.getElementById("excel-subject-stat-danger").textContent = `${danger} 명`;
     }
 
+  </script>
+
+  <!-- 모바일 사이드바 드로어 토글 -->
+  <script>
+    (function () {
+      const sidebar = document.getElementById("sidebar");
+      const overlay = document.getElementById("sidebar-overlay");
+      const hamburger = document.getElementById("hamburger-btn");
+      if (!sidebar || !overlay || !hamburger) return;
+
+      function openDrawer() {
+        sidebar.classList.add("open");
+        overlay.classList.add("open");
+      }
+      function closeDrawer() {
+        sidebar.classList.remove("open");
+        overlay.classList.remove("open");
+      }
+
+      hamburger.addEventListener("click", function () {
+        sidebar.classList.contains("open") ? closeDrawer() : openDrawer();
+      });
+      overlay.addEventListener("click", closeDrawer);
+
+      // 메뉴(탭) 선택 시 드로어 자동 닫기
+      sidebar.querySelectorAll(".nav-item").forEach(function (item) {
+        item.addEventListener("click", closeDrawer);
+      });
+
+      // 데스크톱 폭으로 넓어지면 드로어 상태 초기화
+      window.addEventListener("resize", function () {
+        if (window.innerWidth > 820) closeDrawer();
+      });
+    })();
   </script>
 </body>
 </html>
