@@ -6654,6 +6654,46 @@
       return html;
     }
 
+    // 공백 제거 문자열에서 2회 이상 나타나는 가장 긴 반복 구절 탐색
+    function longestRepeatedSubstring(s, minLen) {
+      for (let len = Math.floor(s.length / 2); len >= minLen; len--) {
+        const seen = new Set();
+        for (let i = 0; i + len <= s.length; i++) {
+          const sub = s.slice(i, i + len);
+          if (seen.has(sub)) return sub;
+          seen.add(sub);
+        }
+      }
+      return "";
+    }
+
+    // 한 기재 내용 안에서 반복되는 문장/구절 탐지(중복 경고용)
+    function findInternalDuplicates(text) {
+      const results = [];
+      const reportedKeys = [];
+      // 1) 문장(마침표/줄바꿈) 단위 완전 중복
+      const sentences = text.split(/[.\n]/).map(s => s.trim()).filter(Boolean);
+      const sentMap = {};
+      sentences.forEach(s => {
+        const key = s.replace(/\s/g, "");
+        if (key.length < 8) return;
+        (sentMap[key] = sentMap[key] || { text: s, n: 0 }).n++;
+      });
+      Object.keys(sentMap).forEach(k => {
+        if (sentMap[k].n >= 2) {
+          results.push({ phrase: sentMap[k].text, count: sentMap[k].n });
+          reportedKeys.push(k);
+        }
+      });
+      // 2) 문장 중복이 없을 때만, 문장 경계와 무관한 반복 구절(공백·마침표 제거 기준 12자 이상) 검사
+      if (results.length === 0) {
+        const flat = text.replace(/[\s.]/g, "");
+        const rep = longestRepeatedSubstring(flat, 12);
+        if (rep) results.push({ phrase: rep, count: 2 });
+      }
+      return results;
+    }
+
     function initEditor() {
       const editor = document.getElementById("editor");
       editor.addEventListener("input", () => {
@@ -6721,6 +6761,17 @@
           msg: `허용 한도인 ${config.maxByte} Bytes를 초과했습니다. 나이스 입력 시 내용이 잘릴 수 있으니 축소하세요. (글자 수가 아닌 바이트 기준입니다)`
         });
       }
+
+      // 1-2. 한 활동 안 중복 내용 검사
+      const dups = findInternalDuplicates(text);
+      dups.forEach(d => {
+        const snippet = d.phrase.length > 40 ? d.phrase.slice(0, 40) + "…" : d.phrase;
+        issues.push({
+          type: "warning",
+          header: "동일 내용 반복(중복) 감지",
+          msg: `같은 활동 안에서 반복되는 내용이 있습니다(${d.count}회). 중복 서술을 정리하세요.<br><strong style="color:#fbbf24;">반복 구절: "${escapeHtml(snippet)}"</strong>`
+        });
+      });
 
       // 2. Ending verb check
       if (text.trim().length > 0) {
@@ -8213,6 +8264,12 @@
           issuesText.push("종결어미");
         }
 
+        // 한 활동 안 중복 내용 검사 → 경고(주의)
+        if (findInternalDuplicates(text).length > 0) {
+          isWarning = true;
+          if (!issuesText.includes("내용중복")) issuesText.push("내용중복");
+        }
+
         let bannedMatched = false;
         Object.keys(BANNED_WORDS).forEach(banned => {
           if (text.includes(banned)) {
@@ -9295,6 +9352,12 @@
         if (nonNoun) {
           isWarning = true;
           issuesText.push("종결어미");
+        }
+
+        // 한 활동 안 중복 내용 검사 → 경고(주의)
+        if (findInternalDuplicates(text).length > 0) {
+          isWarning = true;
+          if (!issuesText.includes("내용중복")) issuesText.push("내용중복");
         }
 
         let bannedMatched = false;
