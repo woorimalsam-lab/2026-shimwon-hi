@@ -6535,6 +6535,30 @@
       return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     }
 
+    // 서술형 종결을 명사형 종결로 바꾼 추천 문장을 생성(휴리스틱)
+    function toNounEnding(sentence) {
+      let s = sentence.trim().replace(/[.\s]+$/, "");
+      if (!s) return s;
+      if (/[함임음됨봄짐남김움음]$/.test(s)) return s; // 이미 명사형
+      const rules = [
+        [/하였다$/, "하였음"], [/되었다$/, "되었음"], [/이었다$/, "이었음"],
+        [/하게 되었다$/, "하게 됨"], [/보였다$/, "보였음"], [/보인다$/, "보임"],
+        [/하다$/, "함"], [/했다$/, "함"], [/한다$/, "함"],
+        [/되다$/, "됨"], [/된다$/, "됨"], [/이다$/, "임"],
+        [/있다$/, "있음"], [/없다$/, "없음"], [/같다$/, "같음"],
+        [/나다$/, "남"], [/지다$/, "짐"],
+        [/[았었였]다$/, m => m.slice(0, 1) + "음"],
+        [/는다$/, "음"], [/다$/, "음"],
+        // 해요체
+        [/했어요$/, "함"], [/해요$/, "함"], [/이에요$/, "임"], [/예요$/, "임"],
+        [/어요$/, "음"], [/아요$/, "음"], [/요$/, "음"]
+      ];
+      for (const [re, rep] of rules) {
+        if (re.test(s)) return s.replace(re, rep);
+      }
+      return s + "음";
+    }
+
     // 텍스트에서 금지어/대체권장 표현을 찾아 위치·유형과 함께 반환
     function getBannedMatches(text) {
       const matches = [];
@@ -6655,6 +6679,7 @@
         let cleanText = text.replace(/["“”'‘][^"“”'’]*["“”'’]/g, '').replace(/\([^)]*\)/g, '').replace(/<[^>]*>/g, '').replace(/\[[^\]]*\]/g, '').replace(/【[^】]*】/g, '');
         const sentences = cleanText.split(/[.\n]/).map(s => s.trim()).filter(s => s.length > 0);
         let nonNounEndingCount = 0;
+        let flaggedSentence = "";
         if (cleanText.trim().endsWith('.')) {
           nonNounEndingCount = 0;
         } else if (sentences.length > 0) {
@@ -6662,13 +6687,20 @@
           const lastChar = lastSentence.slice(-1);
           if (/[다요오죠체서라]$/.test(lastSentence) || !/[함임음됨ㅁㄴ기]$/.test(lastChar)) {
             nonNounEndingCount++;
+            flaggedSentence = lastSentence;
           }
         }
         if (nonNounEndingCount > 0) {
+          const recommended = toNounEnding(flaggedSentence);
+          let recoHtml = "";
+          if (recommended && recommended !== flaggedSentence) {
+            recoHtml = `<br><strong style="color:#34d399;">✏️ 추천 문장: ${escapeHtml(recommended)}.</strong>`
+              + `<br><span style="font-size:12px;color:#94a3b8;">※ 자동 변환된 추천이므로 문맥에 맞게 확인·수정하세요.</span>`;
+          }
           issues.push({
             type: "warning",
             header: "문장 종결(마무리) 검토 권장",
-            msg: `맨 마지막 문장이 명사형 어미(~함, ~임)로 완성되지 않았거나 서술형 어미(~다, ~요)로 끝난 것으로 의심됩니다. (입력 내용이 올바르게 끝맺음 되었는지 확인 요망)`
+            msg: `맨 마지막 문장이 명사형 어미(~함, ~임)로 끝나지 않은 것으로 보입니다.${recoHtml}`
           });
         }
       }
