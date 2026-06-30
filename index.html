@@ -1080,6 +1080,14 @@
       padding: 0 2px;
       font-weight: 700;
     }
+    .hl-spell {
+      background-color: rgba(56, 189, 248, 0.20);
+      color: #7dd3fc;
+      border-bottom: 2px solid #0ea5e9;
+      border-radius: 3px;
+      padding: 0 2px;
+      font-weight: 700;
+    }
     .hl-legend {
       display: flex;
       gap: 14px;
@@ -1262,7 +1270,7 @@
     </ul>
 
     <div class="sidebar-footer">
-      <div>Ver 2.8.0 (금지어·평가어 추가)</div>
+      <div>Ver 2.9.0 (맞춤법 검사)</div>
       <div style="margin-top: 4px;">심원고등학교 교사용</div>
       <div style="margin-top: 8px; color: #64748b; font-size: 10px; font-weight: 600;">made by woorimalsam</div>
     </div>
@@ -1375,6 +1383,7 @@
               <div class="hl-legend" style="margin-top: 6px;">
                 <span><span class="hl-dot" style="background:#ef4444;"></span>금지어(삭제 권장)</span>
                 <span><span class="hl-dot" style="background:#f59e0b;"></span>대체 권장 표현</span>
+            <span><span class="hl-dot" style="background:#0ea5e9;"></span>맞춤법 의심</span>
               </div>
             </div>
           </div>
@@ -1831,6 +1840,7 @@
           <div class="hl-legend" style="margin-top: 6px;">
             <span><span class="hl-dot" style="background:#ef4444;"></span>금지어(삭제 권장)</span>
             <span><span class="hl-dot" style="background:#f59e0b;"></span>대체 권장 표현</span>
+            <span><span class="hl-dot" style="background:#0ea5e9;"></span>맞춤법 의심</span>
           </div>
         </div>
 
@@ -2095,6 +2105,43 @@
       "부천": "기재 불가|학교 소재지(부천시) 등 지역명이 기재되면 학교가 특정될 수 있어 블라인드 원칙에 위배됩니다. 지역명을 삭제하거나 '본교 인근 지역', '지역사회' 등으로 우회 서술하세요.",
       "중동": "기재 불가|학교 소재지(중동) 등 구체적 지명이 기재되면 학교가 특정될 수 있어 블라인드 원칙에 위배됩니다. '학교 주변 지역', '지역 공동체' 등으로 우회 서술하세요.",
       "심원": "기재 불가|학교명(심원고등학교)이 직·간접적으로 노출되면 블라인드 원칙에 위배됩니다. 학교명 대신 '본교', '우리 학교' 등으로 기재하세요."
+    };
+
+    // 자주 틀리는 맞춤법(브라우저 내장 검사, 외부 전송 없음) — { 틀린표기: 올바른표기 }
+    // 오탐을 줄이기 위해 거의 항상 틀린 형태만 등재
+    const SPELL_FIXES = {
+      "됬": "됐",
+      "되요": "돼요",
+      "안되요": "안 돼요",
+      "안됀": "안 된",
+      "역활": "역할",
+      "몇일": "며칠",
+      "오랫만": "오랜만",
+      "왠만": "웬만",
+      "금새": "금세",
+      "할께": "할게",
+      "할꺼": "할 거",
+      "이예요": "이에요",
+      "있읍니다": "있습니다",
+      "없읍니다": "없습니다",
+      "통채": "통째",
+      "어떻해": "어떡해",
+      "갯수": "개수",
+      "구지": "굳이",
+      "닥달": "닦달",
+      "설겆이": "설거지",
+      "희안": "희한",
+      "끼여들": "끼어들",
+      "함으로서": "함으로써",
+      "참여률": "참여율",
+      "성취률": "성취율",
+      "이수률": "이수율",
+      "수있": "수 있",
+      "촛점": "초점",
+      "일일히": "일일이",
+      "틈틈히": "틈틈이",
+      "곰곰히": "곰곰이",
+      "꼼꼼이": "꼼꼼히"
     };
 
     const QA_DATABASE = [
@@ -6638,15 +6685,46 @@
       return filtered;
     }
 
-    // 점검 대상을 색으로 강조한 HTML 생성
+    // 자주 틀리는 맞춤법을 찾아 위치·교정안과 함께 반환(외부 전송 없는 내장 검사)
+    function getSpellMatches(text) {
+      const matches = [];
+      Object.keys(SPELL_FIXES).forEach(wrong => {
+        const regex = new RegExp(escapeRegExp(wrong), "g");
+        let m;
+        while ((m = regex.exec(text)) !== null) {
+          if (m.index === regex.lastIndex) regex.lastIndex++;
+          matches.push({
+            start: m.index,
+            end: m.index + m[0].length,
+            word: m[0],
+            suggested: SPELL_FIXES[wrong],
+            type: "spell"
+          });
+        }
+      });
+      matches.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
+      const filtered = [];
+      let lastEnd = -1;
+      matches.forEach(mt => {
+        if (mt.start >= lastEnd) { filtered.push(mt); lastEnd = mt.end; }
+      });
+      return filtered;
+    }
+
+    // 점검 대상(금지어/대체어/맞춤법)을 색으로 강조한 HTML 생성
     function buildHighlightedHTML(text) {
       if (!text) return "";
-      const matches = getBannedMatches(text);
+      // 금지어/대체어 우선, 겹치지 않는 영역에만 맞춤법 표시
+      const banned = getBannedMatches(text);
+      const spell = getSpellMatches(text).filter(sp =>
+        !banned.some(b => sp.start < b.end && b.start < sp.end));
+      const all = banned.concat(spell).sort((a, b) => a.start - b.start);
       let html = "";
       let cursor = 0;
-      matches.forEach(mt => {
+      all.forEach(mt => {
+        if (mt.start < cursor) return;
         html += escapeHtml(text.slice(cursor, mt.start));
-        const cls = mt.type === "danger" ? "hl-danger" : "hl-warning";
+        const cls = mt.type === "danger" ? "hl-danger" : (mt.type === "spell" ? "hl-spell" : "hl-warning");
         html += `<span class="${cls}">${escapeHtml(text.slice(mt.start, mt.end))}</span>`;
         cursor = mt.end;
       });
@@ -6770,6 +6848,19 @@
           type: "warning",
           header: "동일 내용 반복(중복) 감지",
           msg: `같은 활동 안에서 반복되는 내용이 있습니다(${d.count}회). 중복 서술을 정리하세요.<br><strong style="color:#fbbf24;">반복 구절: "${escapeHtml(snippet)}"</strong>`
+        });
+      });
+
+      // 1-3. 맞춤법 검사(내장, 자주 틀리는 표기) — 중복 표기는 1건만
+      const spellSeen = {};
+      getSpellMatches(text).forEach(sp => {
+        if (spellSeen[sp.word]) return;
+        spellSeen[sp.word] = true;
+        issues.push({
+          type: "warning",
+          header: `맞춤법 의심: [${sp.word}]`,
+          msg: `맞춤법 오류로 의심됩니다.<br><strong style="color:#7dd3fc;">교정 제안: ${escapeHtml(sp.word)} → ${escapeHtml(sp.suggested)}</strong>`,
+          replaceAction: { target: sp.word, suggested: sp.suggested }
         });
       });
 
