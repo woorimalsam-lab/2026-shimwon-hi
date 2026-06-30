@@ -1046,6 +1046,50 @@
       color: white;
     }
 
+    /* 점검 대상 강조 미리보기 */
+    .highlight-preview {
+      background-color: #0b0f19;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 14px;
+      line-height: 1.7;
+      max-height: 160px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: #cbd5e1;
+    }
+    .highlight-preview:empty::before {
+      content: "내용을 입력하면 점검 대상이 색으로 표시됩니다.";
+      color: #64748b;
+    }
+    .hl-danger {
+      background-color: rgba(248, 113, 113, 0.25);
+      color: #fca5a5;
+      border-bottom: 2px solid #ef4444;
+      border-radius: 3px;
+      padding: 0 2px;
+      font-weight: 700;
+    }
+    .hl-warning {
+      background-color: rgba(251, 191, 36, 0.22);
+      color: #fcd34d;
+      border-bottom: 2px solid #f59e0b;
+      border-radius: 3px;
+      padding: 0 2px;
+      font-weight: 700;
+    }
+    .hl-legend {
+      display: flex;
+      gap: 14px;
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: -4px;
+    }
+    .hl-legend span { display: inline-flex; align-items: center; gap: 4px; }
+    .hl-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+
     /* ============================================================
        반응형(연동형) 레이아웃 — 모바일 / 태블릿 대응
        ============================================================ */
@@ -1772,8 +1816,17 @@
         <button class="modal-close-btn" id="modal-close-btn">&times;</button>
       </div>
       <div style="display: flex; flex-direction: column; gap: 16px;">
-        <textarea id="modal-textarea" class="main-editor" style="height: 250px; font-size: 14px;"></textarea>
-        
+        <div>
+          <div style="font-size: 12px; font-weight: 700; color: #94a3b8; margin-bottom: 6px;">🔍 점검 대상 미리보기</div>
+          <div id="modal-highlight" class="highlight-preview"></div>
+          <div class="hl-legend" style="margin-top: 6px;">
+            <span><span class="hl-dot" style="background:#ef4444;"></span>금지어(삭제 권장)</span>
+            <span><span class="hl-dot" style="background:#f59e0b;"></span>대체 권장 표현</span>
+          </div>
+        </div>
+
+        <textarea id="modal-textarea" class="main-editor" style="height: 200px; font-size: 14px;"></textarea>
+
         <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted);">
           <span id="modal-char-count">글자 수: 0자 (공백 제외)</span>
           <span id="modal-byte-count">바이트: 0 / 1500 Bytes</span>
@@ -6476,6 +6529,64 @@
       return text.replace(/\s/g, "").length;
     }
 
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    function escapeRegExp(str) {
+      return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+
+    // 텍스트에서 금지어/대체권장 표현을 찾아 위치·유형과 함께 반환
+    function getBannedMatches(text) {
+      const matches = [];
+      Object.keys(BANNED_WORDS).forEach(banned => {
+        const regex = new RegExp(escapeRegExp(banned), "gi");
+        let m;
+        while ((m = regex.exec(text)) !== null) {
+          if (m.index === regex.lastIndex) regex.lastIndex++; // 0길이 방지
+          if (banned === "사설") {
+            const before = m.index > 0 ? text[m.index - 1] : " ";
+            const after = m.index + m[0].length < text.length ? text[m.index + m[0].length] : " ";
+            if (/[가-힣]/.test(before) || /[가-힣]/.test(after)) continue;
+          }
+          const parts = BANNED_WORDS[banned].split("|");
+          const cleanAlt = parts[0];
+          const isCritical = ["대회", "수상", "특허", "논문", "어학연수", "부모", "기재 불가"]
+            .some(word => banned.includes(word) || cleanAlt.includes(word)) || cleanAlt === "기재 불가";
+          matches.push({
+            start: m.index,
+            end: m.index + m[0].length,
+            word: m[0],
+            type: isCritical ? "danger" : "warning"
+          });
+        }
+      });
+      // 시작 위치 순 정렬 후 겹치는 구간 제거(긴 매치 우선)
+      matches.sort((a, b) => a.start - b.start || (b.end - b.start) - (a.end - a.start));
+      const filtered = [];
+      let lastEnd = -1;
+      matches.forEach(mt => {
+        if (mt.start >= lastEnd) { filtered.push(mt); lastEnd = mt.end; }
+      });
+      return filtered;
+    }
+
+    // 점검 대상을 색으로 강조한 HTML 생성
+    function buildHighlightedHTML(text) {
+      if (!text) return "";
+      const matches = getBannedMatches(text);
+      let html = "";
+      let cursor = 0;
+      matches.forEach(mt => {
+        html += escapeHtml(text.slice(cursor, mt.start));
+        const cls = mt.type === "danger" ? "hl-danger" : "hl-warning";
+        html += `<span class="${cls}">${escapeHtml(text.slice(mt.start, mt.end))}</span>`;
+        cursor = mt.end;
+      });
+      html += escapeHtml(text.slice(cursor));
+      return html;
+    }
+
     function initEditor() {
       const editor = document.getElementById("editor");
       editor.addEventListener("input", () => {
@@ -6600,12 +6711,14 @@
           msg: issueMsg
         };
 
-        if (!isCritical && cleanAlt !== "기재 불가") {
+        if (!isCritical && cleanAlt && cleanAlt !== "기재 불가") {
           issue.replaceAction = {
             target: match.word,
             suggested: cleanAlt
           };
         }
+        // 모든 감지 표현은 삭제로도 수정 가능(특히 금지어/기재 불가)
+        issue.deleteAction = { target: match.word };
         issues.push(issue);
       });
 
@@ -6629,7 +6742,13 @@
           
           let btnHtml = "";
           if (issue.replaceAction) {
-            btnHtml = `<button class="issue-replace-btn" onclick="replaceBannedWord('${issue.replaceAction.target.replace(/'/g, "\\'")}', '${issue.replaceAction.suggested.replace(/'/g, "\\'")}')">대체어로 즉시 자동 치환</button>`;
+            btnHtml += `<button class="issue-replace-btn" onclick="replaceBannedWord('${issue.replaceAction.target.replace(/'/g, "\\'")}', '${issue.replaceAction.suggested.replace(/'/g, "\\'")}')">✏️ 대체어로 수정</button>`;
+          }
+          if (issue.deleteAction) {
+            btnHtml += `<button class="issue-replace-btn" style="background-color:#ef4444;" onclick="removeBannedWord('${issue.deleteAction.target.replace(/'/g, "\\'")}')">🗑️ 해당 표현 삭제</button>`;
+          }
+          if (btnHtml) {
+            btnHtml = `<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">${btnHtml}</div>`;
           }
 
           div.innerHTML = `
@@ -6658,6 +6777,29 @@
         editor.value = editor.value.replace(regex, replacement);
         saveCurrentText();
         // Update checkmark
+        const studentSelect = document.getElementById("select-student");
+        const selectedOption = studentSelect.options[studentSelect.selectedIndex];
+        if (selectedOption && studentSelect.value) {
+          const baseText = selectedOption.textContent.replace(' 📝', '');
+          selectedOption.textContent = baseText + (editor.value.trim() ? ' 📝' : '');
+        }
+        triggerAnalysis();
+      }
+    };
+
+    // 감지된 표현을 삭제(제거)하고 남는 이중 공백을 정리
+    window.removeBannedWord = function(target) {
+      const regex = new RegExp(escapeRegExp(target), "g");
+      const tidy = (s) => s.replace(regex, "").replace(/[ \t]{2,}/g, " ").replace(/ ([,.])/g, "$1");
+      const activeModal = document.getElementById("modal-overlay").classList.contains("active");
+      if (activeModal) {
+        const modalEditor = document.getElementById("modal-textarea");
+        modalEditor.value = tidy(modalEditor.value);
+        triggerModalAnalysis();
+      } else {
+        const editor = document.getElementById("editor");
+        editor.value = tidy(editor.value);
+        saveCurrentText();
         const studentSelect = document.getElementById("select-student");
         const selectedOption = studentSelect.options[studentSelect.selectedIndex];
         if (selectedOption && studentSelect.value) {
@@ -8084,6 +8226,9 @@
       // NEIS는 '글자 수'가 아닌 '바이트' 단위로만 입력 한도를 적용하므로 글자 수는 참고 정보로만 표시한다.
       document.getElementById("modal-char-count").textContent = `글자 수: ${charCount}자 (공백 제외)`;
       document.getElementById("modal-byte-count").textContent = `바이트: ${byteCount} / ${config.maxByte} Bytes`;
+
+      // 점검 대상 강조 미리보기 갱신
+      document.getElementById("modal-highlight").innerHTML = buildHighlightedHTML(text);
 
       analyzeIssues(text, byteCount, config, "modal-issues", "issue-count");
     }
