@@ -1368,6 +1368,15 @@
                 <div id="gauge-fill" class="gauge-bar-fill"></div>
               </div>
             </div>
+
+            <div style="margin-top: 16px;">
+              <div style="font-size: 12px; font-weight: 700; color: #94a3b8; margin-bottom: 6px;">🔍 점검 대상 미리보기</div>
+              <div id="editor-highlight" class="highlight-preview"></div>
+              <div class="hl-legend" style="margin-top: 6px;">
+                <span><span class="hl-dot" style="background:#ef4444;"></span>금지어(삭제 권장)</span>
+                <span><span class="hl-dot" style="background:#f59e0b;"></span>대체 권장 표현</span>
+              </div>
+            </div>
           </div>
 
           <!-- Bottom Columns: Checklist & Issue Panel -->
@@ -6668,6 +6677,10 @@
         byteStatus.textContent = byteCount > config.maxByte * 0.9 ? "유의" : "안전";
         byteStatus.className = byteCount > config.maxByte * 0.9 ? "report-stat-value warning" : "report-stat-value success";
       }
+
+      // 점검 대상 강조 미리보기 갱신
+      const editorHighlight = document.getElementById("editor-highlight");
+      if (editorHighlight) editorHighlight.innerHTML = buildHighlightedHTML(text);
 
       analyzeIssues(text, byteCount, config, "issue-list", "issue-count");
     }
