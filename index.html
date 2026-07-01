@@ -1342,7 +1342,7 @@
     </ul>
 
     <div class="sidebar-footer">
-      <div>Ver 3.0.0 (다크·라이트 모드)</div>
+      <div>Ver 3.1.0 (맞춤법 자동교정)</div>
       <div style="margin-top: 4px;">심원고등학교 교사용</div>
       <div style="margin-top: 8px; color: #64748b; font-size: 10px; font-weight: 600;">Content referenced from 꿈꾸는 영어쌤</div>
       <div style="margin-top: 2px; color: #64748b; font-size: 10px; font-weight: 600;">Made by 우리말샘</div>
@@ -6931,6 +6931,7 @@
         spellSeen[sp.word] = true;
         issues.push({
           type: "warning",
+          spellFix: true,
           header: `맞춤법 의심: [${sp.word}]`,
           msg: `맞춤법 오류로 의심됩니다.<br><strong style="color:#7dd3fc;">교정 제안: ${escapeHtml(sp.word)} → ${escapeHtml(sp.suggested)}</strong>`,
           replaceAction: { target: sp.word, suggested: sp.suggested }
@@ -7040,14 +7041,27 @@
       } else {
         issueCountEl.textContent = `${issues.length} 건`;
         issueCountEl.className = `report-stat-value ${issues.some(i => i.type === 'danger') ? 'danger' : 'warning'}`;
-        
+
+        // 맞춤법 오류가 여러 건이면 '모두 교정' 버튼을 맨 위에 제공
+        const spellCount = issues.filter(i => i.spellFix).length;
+        if (spellCount >= 1) {
+          const bar = document.createElement("div");
+          bar.className = "issue-item";
+          bar.style.cssText = "background-color: rgba(14,165,233,0.12); border-left: 4px solid #0ea5e9; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;";
+          bar.innerHTML = `<span style="font-weight:700;">🔤 맞춤법 오류 ${spellCount}건</span>`
+            + `<button class="issue-replace-btn" style="background-color:#0ea5e9;" onclick="fixAllSpelling()">✨ 맞춤법 모두 교정</button>`;
+          issueList.appendChild(bar);
+        }
+
         issues.forEach(issue => {
           const div = document.createElement("div");
           div.className = `issue-item ${issue.type}`;
-          
+
           let btnHtml = "";
           if (issue.replaceAction) {
-            btnHtml += `<button class="issue-replace-btn" onclick="replaceBannedWord('${issue.replaceAction.target.replace(/'/g, "\\'")}', '${issue.replaceAction.suggested.replace(/'/g, "\\'")}')">✏️ 대체어로 수정</button>`;
+            const label = issue.spellFix ? "✏️ 맞춤법 교정" : "✏️ 대체어로 수정";
+            const color = issue.spellFix ? ' style="background-color:#0ea5e9;"' : "";
+            btnHtml += `<button class="issue-replace-btn"${color} onclick="replaceBannedWord('${issue.replaceAction.target.replace(/'/g, "\\'")}', '${issue.replaceAction.suggested.replace(/'/g, "\\'")}')">${label}</button>`;
           }
           if (issue.deleteAction) {
             btnHtml += `<button class="issue-replace-btn" style="background-color:#ef4444;" onclick="removeBannedWord('${issue.deleteAction.target.replace(/'/g, "\\'")}')">🗑️ 해당 표현 삭제</button>`;
@@ -7082,6 +7096,34 @@
         editor.value = editor.value.replace(regex, replacement);
         saveCurrentText();
         // Update checkmark
+        const studentSelect = document.getElementById("select-student");
+        const selectedOption = studentSelect.options[studentSelect.selectedIndex];
+        if (selectedOption && studentSelect.value) {
+          const baseText = selectedOption.textContent.replace(' 📝', '');
+          selectedOption.textContent = baseText + (editor.value.trim() ? ' 📝' : '');
+        }
+        triggerAnalysis();
+      }
+    };
+
+    // 감지된 맞춤법 오류를 한 번에 모두 교정
+    window.fixAllSpelling = function() {
+      const fixAll = (s) => {
+        let out = s;
+        Object.keys(SPELL_FIXES).forEach(wrong => {
+          out = out.replace(new RegExp(escapeRegExp(wrong), "g"), SPELL_FIXES[wrong]);
+        });
+        return out;
+      };
+      const activeModal = document.getElementById("modal-overlay").classList.contains("active");
+      if (activeModal) {
+        const modalEditor = document.getElementById("modal-textarea");
+        modalEditor.value = fixAll(modalEditor.value);
+        triggerModalAnalysis();
+      } else {
+        const editor = document.getElementById("editor");
+        editor.value = fixAll(editor.value);
+        saveCurrentText();
         const studentSelect = document.getElementById("select-student");
         const selectedOption = studentSelect.options[studentSelect.selectedIndex];
         if (selectedOption && studentSelect.value) {
