@@ -6741,7 +6741,8 @@
       for (const [re, rep] of rules) {
         if (re.test(s)) return s.replace(re, rep);
       }
-      return s + "임";
+      // 규칙에 없는 어근(실시·참여·발표 등)은 대부분 '하다' 동사이므로 '함'을 붙인다.
+      return s + "함";
     }
 
     // 텍스트에서 금지어/대체권장 표현을 찾아 위치·유형과 함께 반환
