@@ -6959,6 +6959,17 @@
         });
       });
 
+      // 1-4. 특수문자(가운데 점 등) 사용 검사
+      const specialChars = (text.match(/[·・ㆍ•‧∙‥…※★☆■□◆◇▶▲]/g) || []);
+      if (specialChars.length > 0) {
+        const uniqChars = Array.from(new Set(specialChars)).join(" ");
+        issues.push({
+          type: "warning",
+          header: "특수문자 사용 지양",
+          msg: `가운데 점(·) 등 특수문자는 기재 시 지양해야 합니다. 쉼표(,)나 띄어쓰기로 바꿔 주세요.<br><strong style="color:#fbbf24;">감지된 특수문자: ${escapeHtml(uniqChars)}</strong>`
+        });
+      }
+
       // 2. Ending verb check
       if (text.trim().length > 0) {
         let cleanText = text.replace(/["“”'‘][^"“”'’]*["“”'’]/g, '').replace(/\([^)]*\)/g, '').replace(/<[^>]*>/g, '').replace(/\[[^\]]*\]/g, '').replace(/【[^】]*】/g, '');
