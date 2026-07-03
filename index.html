@@ -7100,7 +7100,8 @@
           if (issue.replaceAction) {
             const label = issue.spellFix ? "✏️ 맞춤법 교정" : (issue.endingFix ? "✏️ 명사형으로 수정" : "✏️ 대체어로 수정");
             const color = issue.spellFix ? ' style="background-color:#0ea5e9;"' : (issue.endingFix ? ' style="background-color:#10b981;"' : "");
-            btnHtml += `<button class="issue-replace-btn"${color} onclick="replaceBannedWord('${issue.replaceAction.target.replace(/'/g, "\\'")}', '${issue.replaceAction.suggested.replace(/'/g, "\\'")}')">${label}</button>`;
+            const fn = issue.endingFix ? "fixNounEnding" : "replaceBannedWord";
+            btnHtml += `<button class="issue-replace-btn"${color} onclick="${fn}('${issue.replaceAction.target.replace(/'/g, "\\'")}', '${issue.replaceAction.suggested.replace(/'/g, "\\'")}')">${label}</button>`;
           }
           if (issue.deleteAction) {
             btnHtml += `<button class="issue-replace-btn" style="background-color:#ef4444;" onclick="removeBannedWord('${issue.deleteAction.target.replace(/'/g, "\\'")}')">🗑️ 해당 표현 삭제</button>`;
@@ -7162,6 +7163,35 @@
       } else {
         const editor = document.getElementById("editor");
         editor.value = fixAll(editor.value);
+        saveCurrentText();
+        const studentSelect = document.getElementById("select-student");
+        const selectedOption = studentSelect.options[studentSelect.selectedIndex];
+        if (selectedOption && studentSelect.value) {
+          const baseText = selectedOption.textContent.replace(' 📝', '');
+          selectedOption.textContent = baseText + (editor.value.trim() ? ' 📝' : '');
+        }
+        triggerAnalysis();
+      }
+    };
+
+    // 문장 끝 어절을 명사형으로 교정하고 마침표(.)를 붙인다(문장 끝만 교체)
+    window.fixNounEnding = function(target, replacement) {
+      const apply = (raw) => {
+        let s = raw.replace(/\s+$/, "");
+        const re = new RegExp(escapeRegExp(target) + "[.\\s]*$");
+        if (re.test(s)) return s.replace(re, replacement + ".");
+        const idx = s.lastIndexOf(target);
+        if (idx !== -1) return s.slice(0, idx) + replacement + "." + s.slice(idx + target.length);
+        return s + ".";
+      };
+      const activeModal = document.getElementById("modal-overlay").classList.contains("active");
+      if (activeModal) {
+        const modalEditor = document.getElementById("modal-textarea");
+        modalEditor.value = apply(modalEditor.value);
+        triggerModalAnalysis();
+      } else {
+        const editor = document.getElementById("editor");
+        editor.value = apply(editor.value);
         saveCurrentText();
         const studentSelect = document.getElementById("select-student");
         const selectedOption = studentSelect.options[studentSelect.selectedIndex];
