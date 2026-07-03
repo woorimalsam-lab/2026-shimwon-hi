@@ -1269,6 +1269,35 @@
     body.light-mode [style*="background-color:#0f172a"] { background-color: #f1f5f9 !important; }
     body.light-mode [style*="background-color: #1e293b"],
     body.light-mode [style*="background-color:#1e293b"] { background-color: #ffffff !important; }
+    body.light-mode [style*="background-color: #111b2d"],
+    body.light-mode [style*="background-color:#111b2d"] { background-color: #eff6ff !important; }
+    body.light-mode [style*="background-color: #0d1321"],
+    body.light-mode [style*="background-color:#0d1321"] { background-color: #ffffff !important; }
+    body.light-mode [style*="color: white"],
+    body.light-mode [style*="color:#fff"],
+    body.light-mode [style*="color: #fff"] { color: #1e293b !important; }
+
+    /* 자료실 / Q&A / 사전 / 유사도검사 / 표 등 나머지 컴포넌트 */
+    body.light-mode .dup-result-card,
+    body.light-mode .qa-search-box,
+    body.light-mode .qa-answer,
+    body.light-mode .dict-search,
+    body.light-mode .grid-table { background-color: #f8fafc; }
+    body.light-mode .lib-card,
+    body.light-mode .lib-filter-btn,
+    body.light-mode .lib-row,
+    body.light-mode .qa-item { background-color: #ffffff; }
+    body.light-mode .grid-table th { background-color: #eef2f7; color: #475569; }
+    body.light-mode .grid-table td,
+    body.light-mode .grid-table th { border-color: #e2e8f0; }
+    body.light-mode .lib-card,
+    body.light-mode .lib-row,
+    body.light-mode .qa-item,
+    body.light-mode .lib-filter-btn { border-color: #e2e8f0; }
+    /* 다크에서 밝게 지정된 테두리를 라이트에서 연하게 */
+    body.light-mode [style*="border-color: #334155"],
+    body.light-mode [style*="border-color:#334155"] { border-color: #e2e8f0 !important; }
+    body.light-mode [style*="border: 1px solid #334155"] { border-color: #e2e8f0 !important; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="template_jaju.js"></script>
