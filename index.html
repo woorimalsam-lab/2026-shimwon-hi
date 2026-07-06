@@ -9828,12 +9828,11 @@
           btn.title = "밝은 모드로 전환";
         }
       }
-      let saved = null;
-      try { saved = localStorage.getItem(KEY); } catch (e) {}
-      apply(saved === "light" ? "light" : "dark"); // 기본 다크
+      // 항상 다크로 시작(기본값). 브라이트는 해를 눌렀을 때만 표시.
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      apply("dark");
       btn.addEventListener("click", function () {
         const next = document.body.classList.contains("light-mode") ? "dark" : "light";
-        try { localStorage.setItem(KEY, next); } catch (e) {}
         apply(next);
       });
     })();
