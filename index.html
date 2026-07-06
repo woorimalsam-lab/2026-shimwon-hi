@@ -1288,6 +1288,19 @@
     body.light-mode .lib-row,
     body.light-mode .qa-item { background-color: #ffffff; }
     body.light-mode .grid-table th { background-color: #eef2f7; color: #475569; }
+    /* Q&A 답변 등 밝은 글자색을 라이트에서 어둡게(흰 글자+흰 배경 방지) */
+    body.light-mode .qa-answer,
+    body.light-mode .qa-answer * { color: #334155 !important; }
+    body.light-mode .qa-item,
+    body.light-mode .lib-row,
+    body.light-mode .dict-search { color: #1e293b; }
+    body.light-mode .lib-row-title,
+    body.light-mode .lib-drive-title,
+    body.light-mode .lib-drive-sub,
+    body.light-mode .lib-row-num,
+    body.light-mode .lib-row-icon { color: #1e293b !important; }
+    /* 활성 필터 버튼은 강조 배경 유지(흰 글자 가독성) */
+    body.light-mode .lib-filter-btn.active { background-color: #0ea5e9 !important; color: #ffffff !important; border-color: #0ea5e9 !important; }
     body.light-mode .grid-table td,
     body.light-mode .grid-table th { border-color: #e2e8f0; }
     body.light-mode .lib-card,
