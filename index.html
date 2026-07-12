@@ -1397,7 +1397,7 @@
     </div>
 
     <div class="sidebar-footer">
-      <div>Ver 3.6.0 (기관 순화어 보강)</div>
+      <div>Ver 3.7.0 (맞춤법 설명 기능)</div>
       <div style="margin-top: 4px;">심원고등학교 교사용</div>
       <div style="margin-top: 8px; color: #64748b; font-size: 10px; font-weight: 600;">Content referenced from 꿈꾸는 영어쌤</div>
       <div style="margin-top: 2px; color: #64748b; font-size: 10px; font-weight: 600;">Made by 우리말샘</div>
@@ -2545,16 +2545,16 @@
       "적중율": "적중률",
       "득점율": "득점률",
       "완성율": "완성률",
-      // 자모 누락·오타형
-      "세스템": "시스템",
-      "시스탬": "시스템",
-      "비급혀": "비급여",
-      "급혀": "급여",
-      "취야 계층": "취약 계층",
-      "취야계층": "취약계층",
-      "취야점": "취약점",
-      "환경 오엽": "환경 오염",
-      "오엽 물질": "오염 물질",
+      // 자모 누락·오타형 — 값에 "표기|설명"을 쓰면 개별 설명이 표시됨
+      "세스템": "시스템|'시스템(system)'의 오타입니다. 외래어 표기법상 '시스템'이 맞습니다.",
+      "시스탬": "시스템|'시스템(system)'의 오타입니다. 외래어 표기법상 '시스템'이 맞습니다.",
+      "비급혀": "비급여|'비급여(非給與)'의 오타입니다.",
+      "급혀": "급여|'급여(給與)'의 오타입니다.",
+      "취야 계층": "취약 계층|'취약(脆弱) 계층'의 오타입니다.",
+      "취야계층": "취약계층|'취약(脆弱) 계층'의 오타입니다.",
+      "취야점": "취약점|'취약점(脆弱點)'의 오타입니다.",
+      "환경 오엽": "환경 오염|'오염(汚染)'의 오타입니다.",
+      "오엽 물질": "오염 물질|'오염(汚染)'의 오타입니다.",
       // 외래어 표기
       "메세지": "메시지",
       "컨텐츠": "콘텐츠",
@@ -7174,18 +7174,47 @@
     }
 
     // 자주 틀리는 맞춤법을 찾아 위치·교정안과 함께 반환(외부 전송 없는 내장 검사)
+    // 맞춤법 교정 이유 설명 생성.
+    // 사전 값에 "표기|설명"으로 개별 설명을 넣을 수 있고, 없으면 규칙으로 자동 판별한다.
+    function getSpellReason(wrong, suggested) {
+      if (/[률율]$/.test(suggested)) {
+        return /[율]$/.test(suggested)
+          ? "받침이 없거나 'ㄴ' 받침 뒤에는 '율'로 적습니다. (한글 맞춤법 제11항)"
+          : "'ㄴ' 이외의 받침 뒤에는 '률'로 적습니다. (한글 맞춤법 제11항)";
+      }
+      if (/[이히]$/.test(suggested) && /[이히]$/.test(wrong)) {
+        return "부사의 끝음절이 분명히 '이'로만 나는 것은 '-이', '히'로도 나는 것은 '-히'로 적습니다. (한글 맞춤법 제51항)";
+      }
+      if (/^[가-힣]+$/.test(wrong) && /(습니다|어요|아요|게|거)/.test(wrong + suggested) === false && /[돼됐]/.test(suggested)) {
+        return "'되어'의 준말은 '돼'로 적습니다. ('되-' 뒤에 어미가 바로 오면 '되')";
+      }
+      if (/(메시지|콘텐츠|리더십|멤버십|파트너십|워크숍|프레젠테이션|로봇|액세서리|플래시|스케줄|심포지엄|바비큐|주스|난센스|리모컨|배터리|앙케트|데뷔|카페|초콜릿|매뉴얼|팸플릿|레크리에이션|에어컨|텔레비전|비전|디지털|리포트|뷔페|타깃|콘셉트|가스|플래카드|시스템)/.test(suggested)) {
+        return "외래어 표기법에 따른 올바른 표기입니다.";
+      }
+      if (suggested.replace(/\s/g, "").length !== wrong.replace(/\s/g, "").length
+        || suggested.includes(" ") !== wrong.includes(" ")) {
+        return "표준어 규정·띄어쓰기에 따른 올바른 표기입니다.";
+      }
+      return "한글 맞춤법·표준어 규정에 따른 올바른 표기입니다. (오타로 자주 발생하는 형태)";
+    }
+
     function getSpellMatches(text) {
       const matches = [];
       Object.keys(SPELL_FIXES).forEach(wrong => {
         const regex = new RegExp(escapeRegExp(wrong), "g");
         let m;
+        // 사전 값은 "올바른표기" 또는 "올바른표기|설명" 형식을 지원
+        const parts = String(SPELL_FIXES[wrong]).split("|");
+        const suggested = parts[0];
+        const reason = parts[1] || getSpellReason(wrong, suggested);
         while ((m = regex.exec(text)) !== null) {
           if (m.index === regex.lastIndex) regex.lastIndex++;
           matches.push({
             start: m.index,
             end: m.index + m[0].length,
             word: m[0],
-            suggested: SPELL_FIXES[wrong],
+            suggested: suggested,
+            reason: reason,
             type: "spell"
           });
         }
@@ -7348,7 +7377,8 @@
           type: "warning",
           spellFix: true,
           header: `맞춤법 의심: [${sp.word}]`,
-          msg: `맞춤법 오류로 의심됩니다.<br><strong style="color:#7dd3fc;">교정 제안: ${escapeHtml(sp.word)} → ${escapeHtml(sp.suggested)}</strong>`,
+          msg: `맞춤법 오류로 의심됩니다.<br><strong style="color:#7dd3fc;">교정 제안: ${escapeHtml(sp.word)} → ${escapeHtml(sp.suggested)}</strong>`
+            + (sp.reason ? `<br><span style="font-size:12px;color:#94a3b8;">📖 이유: ${escapeHtml(sp.reason)}</span>` : ""),
           replaceAction: { target: sp.word, suggested: sp.suggested }
         });
       });
@@ -7544,7 +7574,7 @@
       const fixAll = (s) => {
         let out = s;
         Object.keys(SPELL_FIXES).forEach(wrong => {
-          out = out.replace(new RegExp(escapeRegExp(wrong), "g"), SPELL_FIXES[wrong]);
+          out = out.replace(new RegExp(escapeRegExp(wrong), "g"), String(SPELL_FIXES[wrong]).split("|")[0]);
         });
         return out;
       };
