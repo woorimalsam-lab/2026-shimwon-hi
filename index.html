@@ -1397,7 +1397,7 @@
     </div>
 
     <div class="sidebar-footer">
-      <div>Ver 3.7.0 (맞춤법 설명 기능)</div>
+      <div>Ver 3.8.0 (나이스 과목세특 엑셀 지원)</div>
       <div style="margin-top: 4px;">심원고등학교 교사용</div>
       <div style="margin-top: 8px; color: #64748b; font-size: 10px; font-weight: 600;">Content referenced from 꿈꾸는 영어쌤</div>
       <div style="margin-top: 2px; color: #64748b; font-size: 10px; font-weight: 600;">Made by 우리말샘</div>
@@ -9932,31 +9932,41 @@
           return;
         }
 
+        // 헤더 행 탐지: '성명/이름'이 있고 '번호'(또는 '반/번호' 결합) 컬럼이 있는 행
+        const cellHas = (c, kw) => c != null && String(c).replace(/[\r\n]/g, "").includes(kw);
         let headerIdx = -1;
         for (let i = 0; i < rows.length; i++) {
           const row = rows[i];
-          if (row && row.includes("번호") && (row.includes("이름") || row.includes("성명"))) {
-            headerIdx = i;
-            break;
-          }
+          if (!row) continue;
+          const hasName = row.some(c => cellHas(c, "성명") || cellHas(c, "이름"));
+          const hasNum = row.some(c => cellHas(c, "번호"));
+          if (hasName && hasNum) { headerIdx = i; break; }
         }
 
         if (headerIdx === -1) {
-          alert("올바른 기재점검 시트 양식이 아닙니다. (번호와 이름 컬럼을 찾을 수 없습니다)");
+          alert("올바른 양식이 아닙니다. (성명/번호 컬럼이 있는 행을 찾을 수 없습니다)\n나이스 과목세특 일괄 엑셀 또는 템플릿을 사용하세요.");
           return;
         }
 
-        const headers = rows[headerIdx];
-        const gradeCol = headers.indexOf("학년");
-        const classCol = headers.indexOf("반");
-        const numCol = headers.indexOf("번호");
-        const nameCol = headers.findIndex(h => h === "이름" || h === "성명");
-        const contentCol = headers.findIndex(h => h === "기재내용" || h === "내용" || h === "텍스트");
-        const sem1Col = headers.indexOf("1학기");
-        const sem2Col = headers.indexOf("2학기");
+        // 헤더 정규화(줄바꿈·공백 제거)
+        const headers = rows[headerIdx].map(h => (h == null ? "" : String(h)));
+        const norm = h => h.replace(/[\r\n\s]/g, "");
+        const nheaders = headers.map(norm);
 
-        if (numCol === -1 || nameCol === -1) {
-          alert("엑셀 머리글 중 '번호'와 '이름' 컬럼이 반드시 존재해야 합니다.");
+        const gradeCol = nheaders.indexOf("학년");
+        let classCol = nheaders.indexOf("반");
+        let numCol = nheaders.indexOf("번호");
+        // '반/번호' 결합 컬럼(예: 나이스 원본) — 단독 '반'·'번호'가 아니면서 '번호'를 포함
+        const classNumCol = nheaders.findIndex((h, k) => k !== classCol && k !== numCol && h.includes("번호") && (h.includes("반") || h.includes("/")));
+        const nameCol = nheaders.findIndex(h => h === "성명" || h === "이름");
+        // 내용 컬럼: 템플릿(기재내용/내용/텍스트) 또는 나이스(세부능력 및 특기사항)
+        let contentCol = nheaders.findIndex(h => h === "기재내용" || h === "내용" || h === "텍스트");
+        if (contentCol === -1) contentCol = nheaders.findIndex(h => h.includes("특기사항") || h.includes("세부능력"));
+        const sem1Col = nheaders.indexOf("1학기");
+        const sem2Col = nheaders.indexOf("2학기");
+
+        if (nameCol === -1 || (numCol === -1 && classNumCol === -1)) {
+          alert("엑셀 머리글에서 '성명'과 '번호'(또는 '반/번호') 컬럼을 찾지 못했습니다.");
           return;
         }
 
@@ -9965,32 +9975,37 @@
         for (let i = headerIdx + 1; i < rows.length; i++) {
           const row = rows[i];
           if (!row) continue;
-          
-          const numVal = row[numCol];
+
+          // 반/번호 결정: 결합 컬럼('9/1')이면 분리, 아니면 개별 컬럼 사용
+          let cls = "1", numVal;
+          if (classNumCol !== -1 && row[classNumCol] != null && String(row[classNumCol]).includes("/")) {
+            const parts = String(row[classNumCol]).split("/");
+            cls = (parts[0] || "").trim();
+            numVal = (parts[1] || "").trim();
+          } else {
+            numVal = (numCol !== -1) ? row[numCol] : undefined;
+            if (classCol !== -1 && row[classCol]) cls = row[classCol].toString().trim();
+          }
+
           const nameVal = row[nameCol];
           if (numVal === undefined || numVal === null || numVal === "" || !nameVal) {
             continue;
           }
-          
+
           const g = (gradeCol !== -1 && row[gradeCol]) ? row[gradeCol].toString().trim() : "1";
-          const c = (classCol !== -1 && row[classCol]) ? row[classCol].toString().trim() : "1";
-          
+
           let contentVal = "";
           if (sem1Col !== -1 || sem2Col !== -1) {
             const sem1 = (sem1Col !== -1 && row[sem1Col]) ? row[sem1Col].toString() : "";
             const sem2 = (sem2Col !== -1 && row[sem2Col]) ? row[sem2Col].toString() : "";
-            if (sem1 && sem2) {
-              contentVal = sem1 + "\n" + sem2;
-            } else {
-              contentVal = sem1 || sem2;
-            }
+            contentVal = (sem1 && sem2) ? (sem1 + "\n" + sem2) : (sem1 || sem2);
           } else if (contentCol !== -1) {
             contentVal = row[contentCol] ? row[contentCol].toString() : "";
           }
 
           excelData.push({
             grade: parseInt(g) || 1,
-            classNum: parseInt(c) || 1,
+            classNum: parseInt(cls) || 1,
             number: parseInt(numVal),
             name: nameVal.toString().trim(),
             content: contentVal.trim()
@@ -9998,7 +10013,7 @@
         }
 
         if (excelData.length === 0) {
-          alert("불러온 학생 데이터가 없습니다.");
+          alert("불러온 학생 데이터가 없습니다. 번호·성명이 올바른지 확인해 주세요.");
           return;
         }
 
